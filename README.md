@@ -1,1 +1,2 @@
 # TRAEV
+TRAEV (Trait Robustness Against EVolution) is a computational framework for in silico prediction of evolutionary trajectories and robustness of desired traits in application environments by integrating constraint-based modeling and Monte Carlo-based perturbation analysis methods.
