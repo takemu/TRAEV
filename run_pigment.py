@@ -57,11 +57,12 @@ if __name__ == '__main__':
     futures = []
     with ProcessPoolExecutor(max_workers=WK_NO) as executor:
         for medium_name, nutrients in mediums.items():
-            output_dir = f"output/pigment/{medium_name}"
+            output_dir = f"results/pigment/{medium_name}"
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
             futures.append(executor.submit(run_indigoidine, medium_name, nutrients, n_mutations, n_samples, output_dir))
             futures.append(executor.submit(run_bikaverin, medium_name, nutrients, n_mutations, n_samples, output_dir))
+            time.sleep(2 * 60)  # stagger job starts by 2 minutes
         wait(futures)
 
     print(f"Completed in {(time.time() - start_time) / 60 / 60:.2f}h.\n")
