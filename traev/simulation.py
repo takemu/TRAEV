@@ -71,12 +71,12 @@ def simulate_ale_strain(gpr_model, nutrients, target_growth, extra_constraints={
     
     Arguments:
         gpr_model (CBModel): GPR transformed reframed cobra model
-        nutrients (list): list of nutrients in the environment
+        nutrients (list): list of nutrients in ALE environment
         target_growth (double): targeted specific growth rate (biomass)
         extra_constraints (dict): extra constraints
-        ref_fluxes (dict): fluxes of parental strain
+        ref_fluxes (dict): fluxes of reference strain
     Returns:
-        solution (Solution): fluxes of ALE-evolved strain
+        solution (dict): fluxes of ALE-evolved strain
         
     """
     constraints = {rxn: (-MAX_FLUX, 0) for rxn in nutrients}
@@ -111,9 +111,9 @@ def simulate_engineered_strain(gpr_model, medium, carbon_source, target_growth, 
         max_uptake (double): max uptake of carbon source
         products (list): list of target products of engineered strain
         extra_constraints (dict): extra constraints
-        ref_fluxes (dict): fluxes of parental strain
+        ref_fluxes (dict): fluxes of reference strain
     Returns:
-        solution (Solution): fluxes of engineered strain
+        solution (dict): fluxes of engineered strain
 
     """
     constraints = {rxn: (-MAX_FLUX, 0) for rxn in medium}
@@ -143,8 +143,8 @@ def simulate_adaptation(gpr_model, ref_fluxes, nutrients, extra_constraints={}, 
 
     Arguments:
         gpr_model (CBModel): GPR transformed reframed cobra model
-        ref_fluxes (dict): fluxes of parental strain
-        nutrients (list): list of nutrients in the environment
+        ref_fluxes (dict): fluxes of reference strain
+        nutrients (list): list of nutrients in given environment
         extra_constraints (dict): extra constraints
         user_p_growth (double): user defined specific growth rate of plastic state (optional)
         user_a_growth (double): user defined specific growth rate of adapted state (optional)

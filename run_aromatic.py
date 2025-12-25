@@ -1,3 +1,4 @@
+from datetime import datetime
 import time
 import os
 import sys
@@ -14,7 +15,7 @@ if os.getenv('SLURM_CPUS_PER_TASK'):
     WK_NO = int(os.getenv('SLURM_CPUS_PER_TASK'))
 else:
     WK_NO = os.cpu_count() - 2
-model_dump_file = "data/aromatic_model.pkl"
+
 
 anaerobic_constr = {
     # close glycerol utilization pathway as glucose is used as c-source
@@ -42,7 +43,7 @@ wine_must = [substrate_rxns[sub] for sub in ['Fru', 'Glc'] + nitrogen_sources]
 target_growth = 0.4
 
 
-def run_simulations(env_id, evo_nutrients, appl_nutrients, anaerobic, output_dir):
+def run_simulations(model_dump_file, env_id, evo_nutrients, appl_nutrients, anaerobic, output_dir):
     if not os.path.exists(f'{output_dir}/{env_id}_fva_results.csv'):
         with open(model_dump_file, 'rb') as f:
             gpr_model, rtgr = dill.load(f)
@@ -53,7 +54,7 @@ def run_simulations(env_id, evo_nutrients, appl_nutrients, anaerobic, output_dir
         fva_df.to_csv(f'{output_dir}/{env_id}_fva_results.csv')
 
 
-def run_robustness_analysis(env_id, nutrients, anaerobic, desired_trait, n_mutations, n_samples, output_dir):
+def run_robustness_analysis(model_dump_file, env_id, nutrients, anaerobic, desired_trait, n_mutations, n_samples, output_dir):
     with open(model_dump_file, 'rb') as f:
         gpr_model, rtgr = dill.load(f)
         reframed_to_gpr_rxns.update(rtgr)
@@ -95,15 +96,16 @@ if __name__ == '__main__':
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     gpr_model, _ = create_gpr_model(model_xml, type='aromatic')
+    model_dump_file = f"data/aromatic_model_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pkl"
     with open(model_dump_file, 'wb') as f:
         dill.dump((gpr_model, reframed_to_gpr_rxns), f)
 
     with ProcessPoolExecutor(max_workers=WK_NO) as executor:
-        futures = [executor.submit(run_simulations, env_id, evo_nutrients, wine_must, anaerobic, output_dir) for env_id, evo_nutrients in evo_envs]
+        futures = [executor.submit(run_simulations, model_dump_file, env_id, evo_nutrients, wine_must, anaerobic, output_dir) for env_id, evo_nutrients in evo_envs]
         wait(futures)
     
     with ProcessPoolExecutor(max_workers=WK_NO) as executor:
-        futures = [executor.submit(run_robustness_analysis, env_id, wine_must, anaerobic, desired_trait, n_mutations, n_samples, output_dir) for env_id, _ in evo_envs]
+        futures = [executor.submit(run_robustness_analysis, model_dump_file, env_id, wine_must, anaerobic, desired_trait, n_mutations, n_samples, output_dir) for env_id, _ in evo_envs]
         wait(futures)
             
     if os.path.exists(model_dump_file):
