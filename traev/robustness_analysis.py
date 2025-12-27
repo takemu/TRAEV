@@ -63,26 +63,27 @@ def robustness_analysis(gpr_model, fva_df, nutrients, desired_trait, extra_const
                         results.append([mutation, 1, pf, dt])
                         min_pf1 = min(min_pf1, pf)
         
-        pre_min_pf = min_pf1
-        for i in range(1, n_mutations):
-            comb_mutations = mutation_sampling(single_mutations, i+1)
-            s_count = 0
-            min_pf = float('inf')
-            for mutation in comb_mutations:
-                if s_count >= n_samples:
-                    break
-                solution = solver.solve(lin_obj,
-                                    quadratic=quad_obj,
-                                    minimize=True,
-                                    constraints=gpr_constraints | {rxn: (fva_df.loc[rxn, 'a_flux'], fva_df.loc[rxn, 'a_flux']) for rxn in mutation})
-                if solution.status == Status.OPTIMAL or solution.status == Status.SUBOPTIMAL:
-                    pf = solution.values[r_biomass] / -sum_flux(solution.to_dataframe()['value'], ut_gpr_rxns)
-                    dt = sum_flux(solution.to_dataframe()['value'], dt_gpr_rxns) / -sum_flux(solution.to_dataframe()['value'], ut_gpr_rxns)
-                    if pre_min_pf < pf <= fva_df.loc['proxy_fitness', 'a_flux'] and 0 < dt <= fva_df.loc['desired_trait', 'p_flux']:
-                        results.append([mutation, len(mutation), pf, dt])
-                        min_pf = min(min_pf, pf)
-                        s_count += 1
-            pre_min_pf = min_pf
+        if len(results) > 0:
+            pre_min_pf = min_pf1
+            for i in range(1, n_mutations):
+                comb_mutations = mutation_sampling(single_mutations, i+1)
+                s_count = 0
+                min_pf = float('inf')
+                for mutation in comb_mutations:
+                    if s_count >= n_samples:
+                        break
+                    solution = solver.solve(lin_obj,
+                                        quadratic=quad_obj,
+                                        minimize=True,
+                                        constraints=gpr_constraints | {rxn: (fva_df.loc[rxn, 'a_flux'], fva_df.loc[rxn, 'a_flux']) for rxn in mutation})
+                    if solution.status == Status.OPTIMAL or solution.status == Status.SUBOPTIMAL:
+                        pf = solution.values[r_biomass] / -sum_flux(solution.to_dataframe()['value'], ut_gpr_rxns)
+                        dt = sum_flux(solution.to_dataframe()['value'], dt_gpr_rxns) / -sum_flux(solution.to_dataframe()['value'], ut_gpr_rxns)
+                        if pre_min_pf < pf <= fva_df.loc['proxy_fitness', 'a_flux'] and 0 < dt <= fva_df.loc['desired_trait', 'p_flux']:
+                            results.append([mutation, len(mutation), pf, dt])
+                            min_pf = min(min_pf, pf)
+                            s_count += 1
+                pre_min_pf = min_pf
 
     ra_df = pd.DataFrame(results, columns=['mutations', 'n', 'proxy_fitness', 'desired_trait']).set_index('mutations')
     ra_df.loc['p_all', ['n', 'proxy_fitness', 'desired_trait']] = [0, fva_df.loc['proxy_fitness', 'p_flux'], fva_df.loc['desired_trait', 'p_flux']]
